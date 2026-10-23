@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>inat2exif</title>
+  <link rel="icon" type="image/png" href="/web/favicon.png" />
+  <link rel="stylesheet" href="/web/styles.css?v=20261024a" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-head">
+      <h1>inat2exif</h1>
+      <span class="app-description">iNaturalist metadata for your local photos</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <nav class="sidebar-nav" aria-label="Sync workflow">
+        <button id="settings-btn" type="button" class="sidebar-nav-item" aria-current="step">
+          <span class="step-number" aria-hidden="true">1</span>
+          <span>Configure<span class="step-description">Choose photos and metadata</span></span>
+        </button>
+        <button id="progress-nav-btn" type="button" class="sidebar-nav-item" disabled>
+          <span class="step-number" aria-hidden="true">2</span>
+          <span>Auto-match<span class="step-description">Find matching photos</span></span>
+        </button>
+        <button id="review-nav-btn" type="button" class="sidebar-nav-item" disabled>
+          <span class="step-number" aria-hidden="true">3</span>
+          <span>Review matches<span class="step-description">Check and correct selections</span></span>
+        </button>
+        <button id="pending-nav-btn" type="button" class="sidebar-nav-item" disabled>
+          <span class="step-number" aria-hidden="true">4</span>
+          <span>Review changes<span class="step-description">See exactly what will be written</span></span>
+        </button>
+        <button id="saving-nav-btn" type="button" class="sidebar-nav-item" disabled>
+          <span class="step-number" aria-hidden="true">5</span>
+          <span>Save<span class="step-description">Write metadata to your files</span></span>
+        </button>
+      </nav>
+      <section id="review-sidebar" hidden aria-label="Observations by date">
+        <h2 class="sidebar-heading">Observations by date</h2>
+        <div class="summary" id="summary">No auto-match results loaded.</div>
+        <div id="tree"></div>
+      </section>
+      <p class="workflow-safety">Your image files are only changed in step 5. Auto-matching and review do not write image metadata.</p>
+      <button id="quit-app" type="button" class="secondary quit-app" hidden>Quit inat2exif</button>
+    </aside>
+
+    <section class="content">
+      <div id="workflow-notice" class="workflow-notice" role="status" hidden></div>
+      <section id="settings-view" class="settings-view" aria-labelledby="settings-heading">
+        <p class="step-eyebrow">Step 1 of 5</p>
+        <h2 id="settings-heading" tabindex="-1">Configure your sync</h2>
+        <p>Choose your photo library and the metadata to write. Settings are remembered for your next run. You will review matches and changes before any image files are modified.</p>
+        <form id="config-form" class="config-form">
+          <fieldset class="config-group">
+            <legend>Source and photo library</legend>
+            <label>
+              iNaturalist username
+              <input id="username" name="username" required autocomplete="off" aria-describedby="username-help" />
+              <small id="username-help">Public data works without signing in. When connected, use your signed-in account here.</small>
+            </label>
+            <section class="auth-panel" aria-labelledby="auth-heading">
+              <h3 id="auth-heading">Optional iNaturalist sign-in</h3>
+              <p id="auth-status" role="status">Public-only mode. Sign-in is optional.</p>
+              <p class="metadata-warning">While signed in, your own precise/private locations are used for previews and metadata, including EXIF GPS where missing. Sharing the resulting images can reveal locations hidden on iNaturalist. Existing GPS is still kept; turn off locality and GPS syncing if you do not want those fields written. Templates can also include location data.</p>
+              <details id="oauth-setup">
+                <summary>Set up and sign in with your own OAuth application</summary>
+                <p class="field-help">Register an application at <a href="https://www.inaturalist.org/oauth/applications" target="_blank" rel="noreferrer">iNaturalist OAuth applications</a>, using the callback URL below. Sign-in takes place on iNaturalist; never enter your iNaturalist password here. Save any other setting edits before leaving this page.</p>
+                <label>Callback URL (must match the registered redirect URI)
+                  <input id="oauth-callback" readonly />
+                </label>
+                <label>Application client ID
+                  <input id="oauth-client-id" name="oauth_client_id" autocomplete="username" />
+                </label>
+                <label>Application client secret
+                  <input id="oauth-client-secret" name="oauth_client_secret" type="password" autocomplete="current-password" />
+                </label>
+                <label class="checkbox-label">
+                  <input id="oauth-remember" type="checkbox" />
+                  <span>Remember application credentials on this computer</span>
+                </label>
+                <p class="field-help">If selected, the client ID and secret are stored outside your normal config and browser storage: in a plaintext file restricted to your user account on macOS and Linux, or in Windows Credential Manager. Leave the secret blank to reuse saved credentials for the same client ID. Unchecking this option removes any saved credentials when you start sign-in. Access tokens are never saved: sign in again after restarting. You can also fill these fields using a password manager. Use this app only on your own computer.</p>
+                <button id="oauth-sign-in" type="button" class="secondary">Sign in on iNaturalist</button>
+              </details>
+              <p id="oauth-storage-status" class="field-help" role="status"></p>
+              <button id="oauth-forget" type="button" class="secondary" hidden>Forget saved application credentials</button>
+              <button id="oauth-disconnect" type="button" class="secondary" hidden>Disconnect and use public data</button>
+              <button id="check-privacy" type="button" class="secondary">Check public-data limitations</button>
+              <p class="field-help">This check loads all public observations for the entered username and may take a while. It does not download photos or change files.</p>
+              <p id="privacy-report" class="field-help" role="status">Run the check, or auto-match, to see privacy and missing-data statistics.</p>
+            </section>
+            <label>
+              Photo library folder
+              <input id="path" name="path" required placeholder="/home/you/Pictures" aria-describedby="path-help" />
+              <small id="path-help">Enter the full folder path on the computer running inat2exif. JPEGs in this folder and its subfolders are matched using capture times and image comparison.</small>
+            </label>
+            <button id="browse-folder" type="button" class="secondary">Browse folders...</button>
+            <label class="checkbox-label">
+              <input id="ignore-hidden-files" name="ignore_hidden_files" type="checkbox" checked />
+              <span>Skip hidden files and folders (names starting with a dot)</span>
+            </label>
+          </fieldset>
+          <fieldset class="config-group">
+            <legend>Observation metadata</legend>
+            <p class="field-help">Observation links and IDs are always written so photos can be recognized on later runs. Choose everything else below. Switching a category off leaves its existing metadata untouched.</p>
+            <label class="checkbox-label"><input id="write-dates" type="checkbox" checked /><span>Observation date (XMP; the camera's capture time is kept)</span></label>
+            <label class="checkbox-label"><input id="write-people" type="checkbox" checked /><span>Observer and identification details</span></label>
+            <label class="checkbox-label"><input id="write-taxonomy" type="checkbox" checked /><span>Taxonomy fields (scientific and common names, ranks, wild/captive status)</span></label>
+            <label class="checkbox-label"><input id="write-locality" type="checkbox" checked /><span>Locality fields (place names and decimal coordinates in XMP)</span></label>
+            <label class="checkbox-label"><input id="write-gps" type="checkbox" checked /><span>Add EXIF GPS coordinates where missing</span></label>
+            <p class="field-help">Existing EXIF or XMP GPS coordinates are kept. Public-only mode uses approximate coordinates for obscured locations and skips locations with no available coordinates. Signing in uses your own private coordinates when available.</p>
+            <label class="checkbox-label">
+              <input id="write-hierarchical-tags" name="write_hierarchical_tags" type="checkbox" checked />
+              <span>Write taxonomy keywords for Lightroom, digiKam and other photo apps</span>
+            </label>
+            <label>Taxonomy keyword prefix
+              <input id="taxonomy-tag-prefix" value="taxonomy" placeholder="No prefix" aria-describedby="tag-prefix-help" />
+              <small id="tag-prefix-help">For example, taxonomy / Animalia / Insecta. Leave blank to start at Animalia instead. Changing the prefix updates previously managed tags; unrelated keywords are kept.</small>
+            </label>
+          </fieldset>
+          <fieldset class="config-group">
+            <legend>Image title and description</legend>
+            <p class="field-help">Templates use iNaturalist fields such as <code>{{name}}</code>. Try the built-in example, or enter your username to preview your own observations before auto-matching.</p>
+            <div class="preview-samples">
+              <label>Preview observation
+                <select id="preview-sample"><option value="">Built-in example (illustrative data)</option></select>
+              </label>
+              <button id="reload-preview-samples" type="button" class="secondary">Load my preview observations</button>
+              <p id="preview-samples-status" class="field-help" role="status">The built-in example is ready to use without a network connection.</p>
+              <a id="preview-sample-link" target="_blank" rel="noreferrer" hidden>View this observation on iNaturalist</a>
+            </div>
+            <p class="metadata-warning">For enabled title/description fields, saving replaces existing XMP values with these templates. An empty template clears that field; switching its checkbox off leaves it untouched. Review the exact changes in step 4, and keep a backup of your photos.</p>
+            <label class="checkbox-label"><input id="write-title" type="checkbox" checked /><span>Sync image title</span></label>
+            <label class="template-field">
+              <span>Image title template</span>
+              <textarea id="image-title-template" name="image_title_template" rows="2" placeholder="Animal: {{name}} Faved {{faves_count}} time(s)"></textarea>
+              <div id="image-title-template-editor" class="template-editor-shell" hidden></div>
+              <div class="template-preview">
+                <div class="status-text">Preview</div>
+                <div id="image-title-preview" class="template-preview-output"></div>
+              </div>
+            </label>
+            <label class="checkbox-label"><input id="write-description" type="checkbox" checked /><span>Sync image description</span></label>
+            <label class="template-field">
+              <span>Image description (caption) template</span>
+              <textarea id="image-caption-template" name="image_caption_template" rows="4" placeholder="Observed by {{user.name}} at {{place_guess}}"></textarea>
+              <div id="image-caption-template-editor" class="template-editor-shell" hidden></div>
+              <div class="template-preview">
+                <div class="status-text">Preview</div>
+                <div id="image-caption-preview" class="template-preview-output"></div>
+              </div>
+            </label>
+            <details class="template-fields-panel">
+              <summary>Browse available template fields</summary>
+              <div id="template-sample-meta" class="status-text"></div>
+              <div id="template-field-list" class="template-field-list"></div>
+            </details>
+          </fieldset>
+          <p id="config-status" class="field-help" role="status">Ready? Save your settings and start auto-matching. No image metadata will be written yet.</p>
+          <div id="config-actions" class="config-actions">
+            <button id="save-settings" type="submit" class="secondary">Save settings only</button>
+            <button id="analyze" type="submit">Save settings and auto-match</button>
+          </div>
+        </form>
+        <details class="cache-settings">
+          <summary>Advanced: manage caches</summary>
+          <p class="status-text">Data kept on disk to speed up auto-matching. Clearing a cache is safe; it is rebuilt when next needed, which makes that run slower.</p>
+          <p id="cache-dir" class="status-text cache-dir"></p>
+          <table class="cache-table">
+            <thead>
+              <tr><th scope="col">Cache</th><th scope="col" class="cache-size">Size</th><th scope="col"></th></tr>
+            </thead>
+            <tbody id="cache-table-body">
+              <tr><td colspan="3" class="status-text">Loading…</td></tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <th scope="row">Total</th>
+                <td id="cache-total" class="cache-size"></td>
+                <td><button id="clear-all-caches" type="button" class="secondary">Clear all</button></td>
+              </tr>
+            </tfoot>
+          </table>
+        </details>
+      </section>
+
+      <section id="analysis-view" hidden aria-labelledby="review-heading">
+        <div class="stage-heading">
+          <div>
+            <p class="step-eyebrow">Step 3 of 5</p>
+            <h2 id="review-heading" tabindex="-1">Review your matches</h2>
+          </div>
+          <button id="review-next" type="button" disabled>Continue to pending changes</button>
+        </div>
+        <p id="review-summary" class="field-help"></p>
+        <p id="review-privacy-report" class="field-help"></p>
+        <p>Choose a date in the sidebar. Compare the iNaturalist reference images with local candidates; click a candidate to select or deselect it. Selected images have a blue border. Corrections are kept for this session, but files are not changed yet.</p>
+        <details class="review-help">
+          <summary>What should I check?</summary>
+          <p>Start with days marked as needing attention. Check suggested matches, select the correct photos and use <strong>Search whole library</strong> if none are right. You can leave observations unmatched and continue whenever you are satisfied.</p>
+          <p>Already tagged photos may need a metadata refresh. Deselecting a previously tagged photo schedules removal of this app's observation metadata, but keeps its GPS coordinates and other keywords. Version siblings are selected together when version grouping is enabled.</p>
+        </details>
+        <div id="day-meta" class="observation-meta">Select a day from the sidebar.</div>
+        <div id="day-table-wrap" class="day-table-wrap"></div>
+      </section>
+
+      <section id="progress-view" class="progress-view" hidden aria-labelledby="progress-heading">
+        <p id="progress-step" class="step-eyebrow">Step 2 of 5</p>
+        <h2 id="progress-heading" tabindex="-1">Auto-matching your observations</h2>
+        <p id="progress-help">Finding local photos and checking their metadata. No image files are being changed. You will review the matches next.</p>
+        <div id="progress" class="progress-panel progress-panel-main">
+          <div id="progress-head" role="status">Idle</div>
+          <div id="progress-bar-wrap" role="progressbar" aria-label="Task progress"><div id="progress-bar"></div></div>
+          <details class="progress-log-details" open>
+            <summary class="progress-log-summary status-text" id="progress-detail">Progress:</summary>
+            <div id="progress-log" class="progress-log"></div>
+          </details>
+        </div>
+        <div id="save-failures" class="save-failures" hidden></div>
+        <div class="stage-actions">
+          <button id="cancel-analysis" type="button" class="secondary" hidden>Cancel auto-match</button>
+          <button id="progress-review" type="button" hidden>Review remaining changes</button>
+          <button id="progress-configure" type="button" class="secondary" hidden>Back to configuration</button>
+        </div>
+      </section>
+
+      <section id="pending-view" class="pending-view" hidden aria-labelledby="pending-heading">
+        <p class="step-eyebrow">Step 4 of 5</p>
+        <h2 id="pending-heading" tabindex="-1">Review pending changes</h2>
+        <p>These are the metadata edits that will be written to your files. Expand the details to check additions, replacements and removals. Nothing is written until you choose Save.</p>
+        <p id="pending-private-warning" class="metadata-warning" hidden>Signed-in data is in use. These changes can include precise locations hidden on iNaturalist, including location text in templates. Check the additions carefully before sharing your images.</p>
+        <div class="stage-actions">
+          <button id="pending-back" type="button" class="secondary">Back to matches</button>
+          <button id="save" type="button" disabled>Save changes to files</button>
+          <button id="pending-configure" type="button" class="secondary" hidden>Back to configuration</button>
+        </div>
+        <div id="pending-summary" class="pending-summary status-text"></div>
+        <div id="pending-list" class="pending-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="folder-picker" aria-labelledby="folder-picker-heading">
+    <h2 id="folder-picker-heading">Choose a photo folder</h2>
+    <p class="field-help">Folders on the computer running inat2exif. No photos are uploaded by this picker.</p>
+    <form id="folder-location-form" class="folder-location">
+      <label>Folder path<input id="folder-location" autocomplete="off" /></label>
+      <button type="submit" class="secondary">Go</button>
+    </form>
+    <div class="stage-actions">
+      <button id="folder-parent" type="button" class="secondary">Parent folder</button>
+      <button id="folder-home" type="button" class="secondary">Home folder</button>
+    </div>
+    <p id="folder-error" role="status"></p>
+    <div id="folder-list" class="folder-list" aria-label="Subfolders"></div>
+    <div class="stage-actions">
+      <button id="folder-cancel" type="button" class="secondary">Cancel</button>
+      <button id="folder-choose" type="button" disabled>Use this folder</button>
+    </div>
+  </dialog>
+  <script src="/web/app.js?v=20261024a" type="module"></script>
+</body>
+</html>

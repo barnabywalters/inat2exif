@@ -1,0 +1,16 @@
+{
+  "username": "",
+  "path": "",
+  "ignore_hidden_files": true,
+  "write_hierarchical_tags": true,
+  "taxonomy_tag_prefix": "taxonomy",
+  "write_dates": true,
+  "write_people": true,
+  "write_taxonomy": true,
+  "write_locality": true,
+  "write_gps": true,
+  "write_title": true,
+  "write_description": true,
+  "image_title_template": "",
+  "image_caption_template": ""
+}

@@ -1,0 +1,60 @@
+[project]
+name = "inat2exif"
+version = "0.1.0"
+description = "Local web app for matching iNaturalist observations to local photos and writing EXIF/XMP observation IDs"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi",
+  "uvicorn",
+  "requests",
+  # Using pyexiv2 as I can’t get py3exiv2 to build
+  "pyexiv2",
+  "opencv-python-headless",
+  "pillow",
+  "pydantic",
+  "jinja2>=3.1.6",
+  "orjson>=3.13.0",
+  "platformdirs>=4.13.5",
+  "keyring>=25.7.0 ; sys_platform == 'win32'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "httpx",
+  "pytest-cov>=7.1.0",
+]
+build = [
+  "pyinstaller>=6.22.3",
+]
+
+[project.scripts]
+inat2exif = "inat2exif.launcher:main"
+
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+inat2exif = ["config_defaults.json", "web/*", "web/vendor/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+  "integration: round-trip tests using native image metadata libraries",
+]
+
+[tool.coverage.run]
+source = ["inat2exif"]
+
+[tool.coverage.report]
+fail_under = 90
+precision = 2
+show_missing = true

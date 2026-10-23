@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=inat2exif
+Comment=Write iNaturalist observation metadata to your local photos
+Exec=inat2exif
+Icon=inat2exif
+Terminal=true
+Categories=Graphics;Photography;

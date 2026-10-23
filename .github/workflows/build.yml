@@ -1,0 +1,85 @@
+name: Test and build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  UV_PYTHON: "3.12"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: uv sync --locked --extra dev
+      - run: npm ci
+      - name: Check the vendored editor bundle is up to date
+        run: |
+          npm run build:vendor
+          git diff --exit-code -- src/inat2exif/web/vendor
+      - run: uv run pytest --cov
+      - run: npm run test:coverage
+
+  build:
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-22.04, platform: linux }
+          - { os: ubuntu-22.04-arm, platform: linux }
+          - { os: windows-2022, platform: windows }
+          - { os: macos-15, platform: macos }
+          - { os: macos-15-intel, platform: macos }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --locked --extra build
+      - name: Read version
+        id: version
+        run: echo "version=$(uv run --no-sync python -c 'import inat2exif; print(inat2exif.__version__)')" >> "$GITHUB_OUTPUT"
+      - name: Build bundle
+        run: uv run --no-sync pyinstaller --noconfirm --distpath build/dist --workpath build/work packaging/pyinstaller/inat2exif.spec
+
+      - name: Self-test and package (Linux)
+        if: matrix.platform == 'linux'
+        run: |
+          build/dist/inat2exif/inat2exif --self-test
+          packaging/linux/build-appimage.sh "${{ steps.version.outputs.version }}"
+          "dist/inat2exif-${{ steps.version.outputs.version }}-linux-$(uname -m).AppImage" --appimage-extract-and-run --self-test
+
+      - name: Self-test and package (Windows)
+        if: matrix.platform == 'windows'
+        run: |
+          build/dist/inat2exif/inat2exif.exe --self-test
+          mkdir -p dist
+          (cd build/dist && 7z a -tzip "../../dist/inat2exif-${{ steps.version.outputs.version }}-windows-x64.zip" inat2exif)
+          "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/DAppVersion=${{ steps.version.outputs.version }}" packaging/windows/inat2exif.iss
+
+      - name: Self-test and package (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          build/dist/inat2exif.app/Contents/MacOS/inat2exif --self-test
+          packaging/macos/build-dmg.sh "${{ steps.version.outputs.version }}"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: inat2exif-${{ matrix.os }}
+          path: dist/*
+          if-no-files-found: error

@@ -154,7 +154,7 @@ def test_samples_rank_deduplicate_and_cache_per_username(sample_api):
 
 def test_sample_cache_expires_and_is_bounded(sample_api):
     template_samples.preview_observations("example")
-    template_samples._CACHE["example"] = (0, [])
+    template_samples._CACHE["example"] = (template_samples.time.monotonic() - template_samples._TTL - 1, [])
     assert template_samples.preview_observations("example")
     assert len(sample_api) == 4
     for index in range(template_samples._MAX_USERS + 1):

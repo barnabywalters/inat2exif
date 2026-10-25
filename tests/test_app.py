@@ -768,7 +768,10 @@ def test_same_minute_shared_group_perfect_for_multiple_obs_is_ambiguous(monkeypa
 	assert match_b.selected_photo_ids == set()
 
 
-def test_real_cached_case_shared_group_never_selected_for_both(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_real_cached_case_shared_group_never_selected_for_both(
+	monkeypatch: pytest.MonkeyPatch,
+	tmp_path: Path,
+) -> None:
 	cache_path = Path("tests/fixtures/real_cached_case/observations_subset.json")
 	assert cache_path.exists(), "Expected cached observations file for regression test"
 
@@ -802,6 +805,7 @@ def test_real_cached_case_shared_group_never_selected_for_both(monkeypatch: pyte
 	monkeypatch.setattr(inat2exif, "score_candidates_per_photo", lambda paths, cands, **_kw: [fake_score_candidates(paths, cands)])
 
 	state = inat2exif.MatcherState()
+	state.cache_dir = tmp_path / "cache"
 	state.group_versions = True
 	state.analyze("barnabywalters", Path("tests/fixtures/real_cached_case/photos"))
 
@@ -822,9 +826,16 @@ def test_real_cached_case_shared_group_never_selected_for_both(monkeypatch: pyte
 
 def test_same_second_regression_keeps_all_manual_candidates_for_each_observation(
 	monkeypatch: pytest.MonkeyPatch,
+	tmp_path: Path,
 ) -> None:
 	"""Regression for 2026-04-24T2225xx photos: same-second observations must not lock to one exact candidate."""
 	fixture_root = Path("tests/fixtures/regression_2026_04_24")
+	cache_dir = tmp_path / "cache"
+	shutil.copytree(
+		fixture_root / "cache",
+		cache_dir,
+		ignore=shutil.ignore_patterns("*.db", "*.db-*"),
+	)
 	obs_ids = [353114080, 353114110, 353114116, 353114115, 353114131]
 
 	raw_observations = []
@@ -859,7 +870,7 @@ def test_same_second_regression_keeps_all_manual_candidates_for_each_observation
 
 	state = inat2exif.MatcherState()
 	state.group_versions = True
-	state.cache_dir = fixture_root / "cache"
+	state.cache_dir = cache_dir
 	state.analyze("barnabywalters", fixture_root)
 
 	local_id_by_name = {photo.path.name: photo.id for photo in state.local_photos_by_id.values()}

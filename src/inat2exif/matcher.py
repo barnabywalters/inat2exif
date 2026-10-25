@@ -1153,6 +1153,10 @@ def match_observations(
 ) -> tuple[list[object], set[int]]:
     obs_count_by_second: dict[float, int] = defaultdict(int)
     obs_count_by_minute: dict[float, int] = defaultdict(int)
+    tagged_photos_by_obs_id: dict[int, list[object]] = defaultdict(list)
+    for photo in by_id.values():
+        if photo.existing_observation_id is not None:
+            tagged_photos_by_obs_id[photo.existing_observation_id].append(photo)
     for obs in observations:
         # Photo-less observations can't compete for local photos, so they mustn't
         # make an observation sharing their time look ambiguous.
@@ -1198,6 +1202,25 @@ def match_observations(
                 )
             )
             continue
+
+        tagged_photos = tagged_photos_by_obs_id.get(obs.obs_id, [])
+        if tagged_photos:
+            selected = {photo.id for photo in tagged_photos}
+            if group_versions:
+                selected = expand_with_version_siblings_fn(selected, by_id)
+            matches.append(
+                match_result_cls(
+                    observation=obs,
+                    status="auto-tagged",
+                    candidate_photo_ids=sorted(selected),
+                    scored_candidates=[(photo_id, 1.0) for photo_id in sorted(selected)],
+                    has_existing_tag=True,
+                    selected_photo_ids=selected,
+                    detail="Matched from existing observation metadata",
+                )
+            )
+            continue
+
         # iNaturalist often stores observed_at without reliable seconds, so multiple
         # observations can collapse to the same second. In that case we must not
         # short-circuit to auto-exact; leave them for minute-level CV disambiguation.

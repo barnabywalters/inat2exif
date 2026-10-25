@@ -636,6 +636,23 @@ def test_matcher_nearby_tier_accepts_clear_match_and_suggests_unclear_ones() -> 
     assert by_obs[2].detail == "2 possible match(es) found within ±24h"
 
 
+def test_matcher_trusts_existing_observation_tag_outside_recorded_time() -> None:
+    observed_at = dt.datetime(2026, 8, 8, 0, 31, tzinfo=dt.timezone(dt.timedelta(hours=2)))
+    obs = _Observation(obs_id=389812925, observed_at=observed_at, photos=[{"id": 100}], uri="u")
+    tagged_photo = _photo_at(
+        5,
+        observed_at - dt.timedelta(hours=12),
+        existing_observation_id=obs.obs_id,
+    )
+
+    matches, _ = _run_match([obs], [tagged_photo], {})
+
+    assert matches[0].status == "auto-tagged"
+    assert matches[0].has_existing_tag
+    assert matches[0].candidate_photo_ids == [5]
+    assert matches[0].selected_photo_ids == {5}
+
+
 @pytest.mark.parametrize("batched", [True, False])
 def test_matcher_finds_companion_photos_taken_minutes_after_the_match(batched: bool) -> None:
     when = dt.datetime(2023, 6, 16, 16, 26, 30, tzinfo=dt.UTC)

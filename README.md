@@ -323,6 +323,7 @@ The first auto-match run after clearing the caches (or after the CV algorithm ch
 ## Future improvements
 
 - Add a fallback metadata writer path for files that `pyexiv2` cannot parse (for example problematic Olympus MakerNote directories), using `exiftool` only for those files so analysis can continue and metadata can still be written without stripping non-standard tags.
+- Investigate potentially speeding up the local photo metadata checking by looking at modification dates for the config, observation and image files.
 
 ## Licence
 

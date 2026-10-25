@@ -74,7 +74,7 @@ jobs:
           build/dist/inat2exif/inat2exif.exe --self-test
           mkdir -p dist
           (cd build/dist && 7z a -tzip "../../dist/inat2exif-${{ steps.version.outputs.version }}-windows-x64.zip" inat2exif)
-          "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/DAppVersion=${{ steps.version.outputs.version }}" packaging/windows/inat2exif.iss
+          MSYS2_ARG_CONV_EXCL='/D' "/c/Program Files (x86)/Inno Setup 6/ISCC.exe" "/DAppVersion=${{ steps.version.outputs.version }}" packaging/windows/inat2exif.iss
 
       - name: Self-test and package (macOS)
         if: matrix.platform == 'macos'

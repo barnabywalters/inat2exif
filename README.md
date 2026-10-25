@@ -1,32 +1,33 @@
 # inat2exif
 
-Local web app for matching iNaturalist observations to local photos and writing observation metadata into image files.
+iNat to EXIF is a local web app for automatically matching iNaturalist observations to image files in your local library, syncing iNat metadata there, and keeping it up to date as it changes.
+
+It started out as a prototype script which I wrote manually a few years ago. The matching algorithm mostly worked, but was made unnecessarily hard by some long-outstanding iNat bugs and oddities. I used that script as a starting point and, working with Github Copilot over a few months, built it into a web app which quickly and efficiently matches my (at the time) ~4000 iNat observations to the relevant photos from my library of ~20,000 images, and keeps the iNat data up to date as identifications are refined or corrected.
+
+Disclaimer: while I’ve personally never had any issues with data loss or corruption from using this tool, I can’t take responsibility for any mishaps which might occur. Make sure you regularly back up your photo library, and do test runs of the tool on a small sample to make sure its working the way you want before letting the tool loose on your entire collection.
+
+![](screenshot-2-review-matches.png)
+
+![](screenshot-3-review-changes.png)
 
 ## What it does
 
-- Fetches observations from iNaturalist for a configured username
-- Indexes local JPEG photos by EXIF timestamp
+- Fetches your observation data from iNaturalist
 - Matches observations to local photos using timestamp and CV scoring (see [How matching works](#how-matching-works))
-- Lets you review selections in a browser UI, with a compact per-observation list of pending metadata changes
-- Can search the whole library in the background for observations that still have no match
-- Shows a size for each cache in the settings page, with buttons to clear them
+- Lets you review matches with a compact per-observation list of pending metadata changes
+- Option to manually trigger whole library searches in the background for observations which can‘t be matched based on the usual heuristics
 - Writes Darwin Core and taxonomy metadata to image XMP fields
 - Adds standard EXIF GPS coordinates from iNaturalist when the image has no existing EXIF or XMP GPS coordinates
-- Supports configurable title/caption templates (Jinja)
-
-GPS additions appear in the pending-changes preview and are also offered as a
-metadata refresh for previously tagged images. Existing GPS coordinates (including
-partial coordinate metadata) are never replaced. Only the coordinates returned
-by iNaturalist are used: in public-only mode, private locations without coordinates
-are skipped and obscured observations use the public, approximate location.
-Optional sign-in uses your own private coordinates when available. Removing observation
-metadata leaves GPS metadata intact.
+- Supports configurable title/caption Jinja templates
 
 ## Download and run
 
 Pre-built bundles for Windows (x64), macOS (Apple silicon and Intel) and Linux
 (x86_64 and arm64) are produced by the GitHub Actions build. They include Python
 and all libraries; nothing else needs to be installed.
+
+Disclaimer: at launch time (2026-10) I’m not able to test Mac and Windows builds.
+If you run into issues, please file a bug report and I’ll see what I can do.
 
 - **Windows**: run the `-setup.exe` installer (no administrator rights needed),
   or unzip the `.zip` and run `inat2exif.exe`. A console window shows the server
@@ -225,6 +226,10 @@ Preview data is cached in memory for 15 minutes and never changes image files.
 Loading errors are displayed while the built-in example remains usable.
 
 ### Optional iNaturalist sign-in and privacy statistics
+
+Disclaimer: at launch time, I have not thoroughly tested the iNat sign-in process.
+I plan on doing so in the near future. If you want to try it and run into any issues,
+please let me know and I’ll see what I can do!
 
 Public-only mode remains the default and needs no credentials. To access your own
 obscured/private locations:

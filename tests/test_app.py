@@ -801,6 +801,11 @@ def test_real_cached_case_shared_group_never_selected_for_both(
 	monkeypatch.setattr(inat2exif, "fetch_observations", fake_fetch_observations)
 	monkeypatch.setattr(inat2exif, "extract_exif_datetime", fake_extract_exif_datetime)
 	monkeypatch.setattr(inat2exif, "read_embedded_xmp", lambda _path: {})
+	monkeypatch.setattr(
+		inat2exif,
+		"cache_observation_photo",
+		lambda _photo, _cache_dir: Path("tests/fixtures/real_cached_case/photos/2024-04-27T150100s534.JPG"),
+	)
 	monkeypatch.setattr(inat2exif, "score_candidates", fake_score_candidates)
 	monkeypatch.setattr(inat2exif, "score_candidates_per_photo", lambda paths, cands, **_kw: [fake_score_candidates(paths, cands)])
 
@@ -831,11 +836,6 @@ def test_same_second_regression_keeps_all_manual_candidates_for_each_observation
 	"""Regression for 2026-04-24T2225xx photos: same-second observations must not lock to one exact candidate."""
 	fixture_root = Path("tests/fixtures/regression_2026_04_24")
 	cache_dir = tmp_path / "cache"
-	shutil.copytree(
-		fixture_root / "cache",
-		cache_dir,
-		ignore=shutil.ignore_patterns("*.db", "*.db-*"),
-	)
 	obs_ids = [353114080, 353114110, 353114116, 353114115, 353114131]
 
 	raw_observations = []
@@ -867,6 +867,13 @@ def test_same_second_regression_keeps_all_manual_candidates_for_each_observation
 	monkeypatch.setattr(inat2exif, "fetch_observations", fake_fetch_observations)
 	monkeypatch.setattr(inat2exif, "extract_exif_datetime", fake_extract_exif_datetime)
 	monkeypatch.setattr(inat2exif, "read_embedded_xmp", lambda _path: {})
+	monkeypatch.setattr(
+		inat2exif,
+		"cache_observation_photo",
+		lambda photo, _cache_dir: (
+			fixture_root / "cache" / str(photo["observation_id"]) / "thumbnail.jpeg"
+		),
+	)
 
 	state = inat2exif.MatcherState()
 	state.group_versions = True

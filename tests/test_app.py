@@ -5,6 +5,7 @@ import shutil
 import sys
 import types
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
@@ -43,6 +44,10 @@ def _make_photo(
 		version_number=version_number,
 		version_siblings=siblings or [],
 	)
+
+
+def _parse_fixture_exif_datetime(value: str) -> dt.datetime:
+	return dt.datetime.strptime(value, "%Y:%m:%d %H:%M:%S").replace(tzinfo=ZoneInfo("Europe/Vienna"))
 
 
 @pytest.fixture(autouse=True)
@@ -800,6 +805,7 @@ def test_real_cached_case_shared_group_never_selected_for_both(
 
 	monkeypatch.setattr(inat2exif, "fetch_observations", fake_fetch_observations)
 	monkeypatch.setattr(inat2exif, "extract_exif_datetime", fake_extract_exif_datetime)
+	monkeypatch.setattr(inat2exif.indexer_logic, "parse_exif_datetime", _parse_fixture_exif_datetime)
 	monkeypatch.setattr(inat2exif, "read_embedded_xmp", lambda _path: {})
 	monkeypatch.setattr(
 		inat2exif,
@@ -866,6 +872,7 @@ def test_same_second_regression_keeps_all_manual_candidates_for_each_observation
 
 	monkeypatch.setattr(inat2exif, "fetch_observations", fake_fetch_observations)
 	monkeypatch.setattr(inat2exif, "extract_exif_datetime", fake_extract_exif_datetime)
+	monkeypatch.setattr(inat2exif.indexer_logic, "parse_exif_datetime", _parse_fixture_exif_datetime)
 	monkeypatch.setattr(inat2exif, "read_embedded_xmp", lambda _path: {})
 	monkeypatch.setattr(
 		inat2exif,

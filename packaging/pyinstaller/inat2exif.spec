@@ -2,6 +2,7 @@
 # Build from the repository root with: uv run --extra build pyinstaller --noconfirm packaging/pyinstaller/inat2exif.spec
 import os
 import platform
+import subprocess
 import sys
 from pathlib import Path
 
@@ -23,6 +24,19 @@ for package in ("pyexiv2",):
     datas += package_datas
     binaries += package_binaries
     hiddenimports += package_hidden
+if IS_MAC:
+    # pyexiv2 loads Exiv2 via ctypes, so PyInstaller misses its INIReader dependency.
+    brew_prefix = subprocess.run(
+        ["brew", "--prefix", "inih"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    inih_lib = Path(brew_prefix) / "lib"
+    inireader_libs = list(inih_lib.glob("libINIReader*.dylib"))
+    if not inireader_libs:
+        raise FileNotFoundError(f"Homebrew INIReader library not found under {inih_lib}")
+    binaries += [(str(path), ".") for path in sorted(inih_lib.glob("*.dylib"))]
 hiddenimports += ["inat2exif.app", "keyring.backends.Windows"] if os.name == "nt" else ["inat2exif.app"]
 
 a = Analysis(

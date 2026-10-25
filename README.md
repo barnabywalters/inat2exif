@@ -4,7 +4,7 @@ iNat to EXIF is a local web app for automatically matching iNaturalist observati
 
 It started out as a prototype script which I wrote manually a few years ago. The matching algorithm mostly worked, but was made unnecessarily hard by some long-outstanding iNat bugs and oddities. I used that script as a starting point and, working with Github Copilot over a few months, built it into a web app which quickly and efficiently matches my (at the time) ~4000 iNat observations to the relevant photos from my library of ~20,000 images, and keeps the iNat data up to date as identifications are refined or corrected.
 
-Disclaimer: while I’ve personally never had any issues with data loss or corruption from using this tool, I can’t take responsibility for any mishaps which might occur. Make sure you regularly back up your photo library, and do test runs of the tool on a small sample to make sure its working the way you want before letting the tool loose on your entire collection.
+**Disclaimer**: while I’ve personally never had any issues with data loss or corruption from using this tool, I can’t take responsibility for any mishaps which might occur. Make sure you regularly back up your photo library, and do test runs of the tool on a small sample to make sure its working the way you want before letting the tool loose on your entire collection.
 
 ![](screenshot-2-review-matches.png)
 
@@ -26,7 +26,7 @@ Pre-built bundles for Windows (x64), macOS (Apple silicon and Intel) and Linux
 (x86_64 and arm64) are produced by the GitHub Actions build. They include Python
 and all libraries; nothing else needs to be installed.
 
-Disclaimer: at launch time (2026-10) I’m not able to test Mac and Windows builds.
+**Disclaimer**: at launch time (2026-10) I’m not able to test Mac and Windows builds.
 If you run into issues, please file a bug report and I’ll see what I can do.
 
 - **Windows**: run the `-setup.exe` installer (no administrator rights needed),
@@ -227,7 +227,7 @@ Loading errors are displayed while the built-in example remains usable.
 
 ### Optional iNaturalist sign-in and privacy statistics
 
-Disclaimer: at launch time, I have not thoroughly tested the iNat sign-in process.
+**Disclaimer**: at launch time, I have not thoroughly tested the iNat sign-in process.
 I plan on doing so in the near future. If you want to try it and run into any issues,
 please let me know and I’ll see what I can do!
 

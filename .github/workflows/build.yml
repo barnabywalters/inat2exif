@@ -54,6 +54,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
+      - name: Install pyexiv2 macOS runtime dependency
+        if: matrix.platform == 'macos'
+        run: brew install inih
       - run: uv sync --locked --extra build
       - name: Read version
         id: version
